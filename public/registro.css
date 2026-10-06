@@ -52,3 +52,16 @@ button:hover,.btn:hover{background:#0d2146}
  form{grid-template-columns:1fr}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* Foto de perfil */
+.foto-ui{display:flex;gap:18px;align-items:center}
+.foto-prev{width:96px;height:96px;flex:none;border-radius:50%;border:1.5px dashed var(--line);background:var(--field) center/cover;display:grid;place-items:center;font-size:.8rem;color:var(--muted)}
+.foto-prev.con{border-style:solid;border-color:var(--navy)}.foto-prev.con span{display:none}
+.foto-acc{display:flex;flex-direction:column;gap:8px}
+.ayuda{font-size:.85rem;color:var(--muted);max-width:40ch}
+.sec{grid-column:auto;background:#fff;color:var(--navy);border:1.5px solid var(--navy);padding:9px 16px}
+.sec:hover{background:#e8edf7}
+.camara{margin-top:12px;max-width:420px}
+.camara video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;background:#0d2146;transform:scaleX(-1)}
+.cam-acc{display:flex;gap:10px;margin-top:10px}.cam-acc button{margin-top:0}
+.gafete .foto{background:center/cover}.gafete .foto.con{border:0}

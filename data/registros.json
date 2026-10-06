@@ -1,1 +1,57 @@
-[]
+[
+  {
+    "id": "1b45f47a-6c0f-4c30-9517-550c56c3d77c",
+    "nombre": "Brandon Elias Gonzalez Romero",
+    "genero": "Masculino",
+    "correo": "brandonelias@gmail.com",
+    "telefono": "4271859535",
+    "nivel": "Preparatoria / Bachillerato",
+    "escuela": "IPIC",
+    "carrera": "",
+    "fecha": "2026-10-06T18:02:43.358Z"
+  },
+  {
+    "id": "8910e131-db55-4263-b702-71a66b6b1e14",
+    "nombre": "Brandon Elias Gonzalez Romero",
+    "genero": "Masculino",
+    "correo": "brandoneli1as@gmail.com",
+    "telefono": "4271859535",
+    "nivel": "Carrera técnica / TSU (Técnico Superior Universitario)",
+    "escuela": "IPIC",
+    "carrera": "SJR",
+    "fecha": "2026-10-06T18:06:19.817Z"
+  },
+  {
+    "id": "51d8c914-330b-469f-978f-eb7a2ecce8c3",
+    "nombre": "Brandon Elias Gonzalez Romero",
+    "genero": "Masculino",
+    "correo": "brandonel1ias@gmail.com",
+    "telefono": "4271859535",
+    "nivel": "Especialidad",
+    "escuela": "IPIC",
+    "carrera": "SJR",
+    "fecha": "2026-10-06T18:07:00.349Z"
+  },
+  {
+    "id": "c4221aec-6847-4186-bc58-dd4eac125907",
+    "nombre": "Brandon Elias",
+    "genero": "Masculino",
+    "correo": "brando231nelias@gmail.com",
+    "telefono": "1234567890",
+    "nivel": "Sin estudios",
+    "escuela": "",
+    "carrera": "",
+    "fecha": "2026-10-06T18:12:43.105Z"
+  },
+  {
+    "id": "a18fedcb-3bd7-4a60-9911-613b8fd543f7",
+    "nombre": "Brandon Elias Gonzalez Romero",
+    "genero": "Masculino",
+    "correo": "bran2kmldmkl0000@gmail.com",
+    "telefono": "4271859535",
+    "nivel": "Sin estudios",
+    "escuela": "",
+    "carrera": "",
+    "fecha": "2026-10-06T18:13:23.234Z"
+  }
+]
