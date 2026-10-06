@@ -1,0 +1,14 @@
+const NIVELES=['Sin estudios','Primaria','Secundaria','Preparatoria / Bachillerato','Carrera técnica / TSU (Técnico Superior Universitario)','Universidad (Licenciatura)','Especialidad','Maestría','Doctorado'];
+const PREG=['¿Qué carrera técnica / TSU estudiaste?','¿Qué licenciatura estudiaste?','¿Qué especialidad cursaste?','¿Qué maestría cursaste?','¿Qué doctorado cursaste?'];
+const f=document.getElementById('f'),err=document.getElementById('err');
+f.nivel.innerHTML='<option value="">Selecciona…</option>'+NIVELES.map(n=>`<option>${n}</option>`).join('');
+f.nivel.onchange=()=>{const i=NIVELES.indexOf(f.nivel.value),show=i>=4;
+ document.getElementById('extra').classList.toggle('hidden',!show);
+ if(show)document.getElementById('extra-l').textContent=PREG[i-4];else f.carrera.value='';};
+f.onsubmit=async e=>{e.preventDefault();err.textContent='';
+ const body=Object.fromEntries(new FormData(f));
+ try{const r=await fetch('/api/registro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();if(!r.ok)throw new Error(d.error);
+  document.getElementById('dl').href='/api/credencial/'+d.id;
+  document.getElementById('form-card').classList.add('hidden');document.getElementById('ok').classList.remove('hidden');
+ }catch(x){err.textContent=x.message||'Error al enviar.';}};

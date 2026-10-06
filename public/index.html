@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Registro al evento · Tec San Juan del Río</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600&family=Source+Serif+4:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="registro.css"></head>
+<body><div class="page">
+<aside class="evento">
+ <h2>Evento en el Tec de San Juan del Río</h2>
+ <dl class="datos">
+  <div><dt>Hora de inicio</dt><dd>9:00 hrs</dd></div>
+  <div><dt>Sede</dt><dd>Tec San Juan del Río</dd></div>
+  <div><dt>Acceso</dt><dd>Solo con credencial</dd></div>
+ </dl>
+ <div class="gafete" aria-hidden="true"><div class="banda"></div><div class="foto"></div>
+  <p class="nombre vacio" id="pv">Tu nombre aparecerá aquí</p><small>Vista aproximada</small></div>
+ <p class="nota">La credencial final usa tu diseño oficial con tu nombre.</p>
+</aside>
+<main class="principal">
+ <section id="form-card">
+  <h1>Regístrate y descarga tu credencial</h1>
+  <p class="intro">Llena tus datos. Al enviarlos, tu credencial con tu nombre estará lista para descargar.</p>
+  <form id="f" novalidate>
+   <div class="campo ancho"><label for="nombre">Nombre completo</label><input id="nombre" name="nombre" required autocomplete="name"></div>
+   <div class="campo"><label for="genero">Género</label><select id="genero" name="genero" required><option value="">Selecciona</option><option>Femenino</option><option>Masculino</option><option>Otro</option><option>Prefiero no decir</option></select></div>
+   <div class="campo"><label for="telefono">Celular <span>(10 dígitos)</span></label><input id="telefono" name="telefono" type="tel" inputmode="numeric" maxlength="14" placeholder="442 123 4567" autocomplete="tel" required></div>
+   <div class="campo ancho"><label for="correo">Correo electrónico</label><input id="correo" name="correo" type="email" required autocomplete="email" placeholder="nombre@correo.com"></div>
+   <div class="campo ancho"><label for="nivel">Último nivel de estudios concluido</label><select id="nivel" name="nivel" required></select></div>
+   <div class="campo" id="extra"><label id="extra-l" for="carrera"></label><input id="carrera" name="carrera"></div>
+   <button>Enviar y generar credencial</button>
+   <div class="err" id="err" role="alert"></div>
+  </form>
+ </section>
+ <section class="ok hidden" id="ok">
+  <h1>Registro completado</h1>
+  <div class="aviso" role="note"><strong>Lleva tu credencial al evento</strong>Sin ella no podrás entrar al Tec de San Juan del Río. Imprímela o guárdala en tu celular, y llega antes de las 9:00 hrs.</div>
+  <a class="btn" id="dl" href="#" download>Descargar mi credencial</a>
+ </section>
+</main></div>
+<script src="app.js"></script>
+<script>
+const pv=document.getElementById('pv');
+document.getElementById('nombre').addEventListener('input',e=>{const v=e.target.value.trim();pv.textContent=v||'Tu nombre aparecerá aquí';pv.classList.toggle('vacio',!v)});
+</script></body></html>
