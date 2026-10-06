@@ -27,9 +27,12 @@ $('btn-x').onclick=cerrarCam;
 
 f.onsubmit=async e=>{e.preventDefault();err.textContent='';
  if(!foto){err.textContent='Agrega tu foto de perfil.';return;}
- const body={...Object.fromEntries(new FormData(f)),foto};delete body.file;
+ if(!$('acepto').checked){err.textContent='Debes aceptar el Aviso de Privacidad para continuar.';return;}
+ const body={...Object.fromEntries(new FormData(f)),foto,acepto:$('acepto').checked};
  try{const r=await fetch('/api/registro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();if(!r.ok)throw new Error(d.error);
-  $('dl').href='/api/credencial/'+d.id;
+  // La credencial vive solo en el navegador; el servidor ya borró la foto
+  const u8=Uint8Array.from(atob(d.credencial),c=>c.charCodeAt(0));
+  $('dl').href=URL.createObjectURL(new Blob([u8],{type:'image/png'}));
   $('form-card').classList.add('hidden');$('ok').classList.remove('hidden');
  }catch(x){err.textContent=x.message||'Error al enviar.';}};

@@ -2,10 +2,23 @@ import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 
+// ======================================================
+// PLANTILLA
+// ======================================================
+
 const TEMPLATE = path.join(
   __dirname,
   '../assets/credencial.png'
 );
+
+
+// ======================================================
+// DIMENSIONES DE LA PLANTILLA
+// ======================================================
+
+const DESIGN_WIDTH = 1024;
+const DESIGN_HEIGHT = 1536;
+
 
 // ======================================================
 // CONFIGURACIÓN DEL NOMBRE
@@ -14,43 +27,70 @@ const TEMPLATE = path.join(
 const NAME_COLOR =
   process.env.NAME_COLOR ?? '#1b1b1b';
 
+
+// ======================================================
+// ÁREA REAL DEL RECUADRO DEL NOMBRE
+//
+// Coordenadas basadas en la plantilla 1024 x 1536.
+//
+// El recuadro visible para el nombre está
+// aproximadamente entre:
+//
+// X: 50 → 708
+// Y: 745 → 865
+// ======================================================
+
 const NAME_BOX = {
-  left: 130,
-  right: 680,
-  top: 850,
-  bottom: 970,
+  left: 50,
+  right: 708,
+  top: 745,
+  bottom: 865,
 };
 
-const NAME_PADDING = 25;
+
+// ======================================================
+// MARGEN INTERNO DEL NOMBRE
+// ======================================================
+
+const NAME_PADDING = 20;
+
+
+// ======================================================
+// TAMAÑOS PERMITIDOS DE FUENTE
+// ======================================================
+
+const MAX_NAME_FONT_SIZE = 38;
+const MIN_NAME_FONT_SIZE = 16;
+
 
 // ======================================================
 // CONFIGURACIÓN DE LA FOTO
+//
+// Estas coordenadas corresponden al interior del
+// recuadro de fotografía de la plantilla.
+//
+// NO incluyen el borde azul.
+//
+// El borde original de la plantilla se conserva.
 // ======================================================
-//
-// Coordenadas para tu credencial de 1024 x 1536 px
-//
 
 const PHOTO_BOX = {
-  left: 704,
-  top: 802,
-  width: 195,
-  height: 235,
+  left: 731,
+  top: 695,
+  width: 237,
+  height: 260,
 };
 
-// Espacio entre la foto y el borde
-const PHOTO_PADDING = 5;
-
-// Radio de las esquinas del recuadro
-const PHOTO_RADIUS = 14;
-
-// Color del borde de la fotografía
-const PHOTO_BORDER_COLOR = '#122E5C';
-
-// Grosor del borde
-const PHOTO_BORDER_WIDTH = 5;
 
 // ======================================================
-// FUNCIONES AUXILIARES
+// RADIO DE LAS ESQUINAS DE LA FOTO
+// ======================================================
+
+const PHOTO_RADIUS = 10;
+
+
+// ======================================================
+// ESCAPAR TEXTO PARA SVG
 // ======================================================
 
 const esc = (s: string) =>
@@ -64,7 +104,26 @@ const esc = (s: string) =>
 
 
 // ======================================================
+// CALCULAR ESCALA
+// ======================================================
+
+function getScale(
+  width: number,
+  height: number
+) {
+  return {
+    x: width / DESIGN_WIDTH,
+    y: height / DESIGN_HEIGHT,
+  };
+}
+
+
+// ======================================================
 // MEDIR TEXTO REAL
+// ======================================================
+//
+// Esta función genera temporalmente el texto,
+// lo recorta y obtiene su ancho real.
 // ======================================================
 
 async function measureText(
@@ -74,17 +133,18 @@ async function measureText(
 
   const svg = `
     <svg
-      width="2000"
-      height="200"
+      width="3000"
+      height="300"
       xmlns="http://www.w3.org/2000/svg"
     >
 
       <text
-        x="0"
-        y="${fontSize}"
+        x="20"
+        y="${fontSize + 20}"
         font-family="Arial, Helvetica, sans-serif"
         font-weight="700"
         font-size="${fontSize}px"
+        fill="#000000"
       >
         ${esc(text)}
       </text>
@@ -92,18 +152,35 @@ async function measureText(
     </svg>
   `;
 
-  const { width } = await sharp(
+  const png = await sharp(
     Buffer.from(svg)
   )
     .png()
-    .metadata();
+    .toBuffer();
 
-  return width ?? 0;
+
+  // Recortar todo el espacio transparente
+  const trimmed = await sharp(png)
+    .trim()
+    .png()
+    .toBuffer();
+
+
+  const metadata =
+    await sharp(trimmed)
+      .metadata();
+
+
+  return metadata.width ?? 0;
 }
 
 
 // ======================================================
 // CALCULAR TAMAÑO DEL NOMBRE
+// ======================================================
+//
+// Busca automáticamente el tamaño de fuente más grande
+// que quepa dentro del recuadro.
 // ======================================================
 
 async function calculateFontSize(
@@ -111,84 +188,112 @@ async function calculateFontSize(
   maxWidth: number
 ): Promise<number> {
 
-  let fontSize = 52;
+  let low =
+    MIN_NAME_FONT_SIZE;
 
-  const MIN_FONT_SIZE = 20;
+  let high =
+    MAX_NAME_FONT_SIZE;
 
-  while (fontSize >= MIN_FONT_SIZE) {
+  let best =
+    MIN_NAME_FONT_SIZE;
+
+
+  while (low <= high) {
+
+    const middle =
+      Math.floor(
+        (low + high) / 2
+      );
+
 
     const textWidth =
       await measureText(
         nombre,
-        fontSize
+        middle
       );
 
-    if (textWidth <= maxWidth) {
-      return fontSize;
-    }
 
-    fontSize--;
+    if (textWidth <= maxWidth) {
+
+      best = middle;
+
+      low =
+        middle + 1;
+
+    } else {
+
+      high =
+        middle - 1;
+    }
   }
 
-  return MIN_FONT_SIZE;
+
+  return best;
 }
 
 
 // ======================================================
 // CREAR FOTO
 // ======================================================
+//
+// La imagen se adapta al espacio utilizando "cover",
+// evitando deformaciones.
+// ======================================================
 
 async function buildPhoto(
-  fotoPath: string
+  fotoPath: string,
+  width: number,
+  height: number
 ): Promise<Buffer> {
 
-  // Tamaño interior del marco
-  const width =
-    PHOTO_BOX.width -
-    PHOTO_PADDING * 2;
-
-  const height =
-    PHOTO_BOX.height -
-    PHOTO_PADDING * 2;
-
-  // ----------------------------------------------------
+  // ====================================================
   // REDIMENSIONAR FOTO
-  // ----------------------------------------------------
+  // ====================================================
 
-  const img = await sharp(fotoPath)
-    .resize(width, height, {
-      fit: 'cover',
-      position: 'centre',
-    })
-    .png()
-    .toBuffer();
+  const image =
+    await sharp(fotoPath)
+      .rotate()
+      .resize({
+        width,
+        height,
+        fit: 'cover',
+        position: 'centre',
+      })
+      .png()
+      .toBuffer();
 
-  // ----------------------------------------------------
-  // MÁSCARA CON ESQUINAS REDONDEADAS
-  // ----------------------------------------------------
 
-  const mask = Buffer.from(`
-    <svg
-      width="${width}"
-      height="${height}"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+  // ====================================================
+  // MÁSCARA PARA ESQUINAS REDONDEADAS
+  // ====================================================
 
-      <rect
-        x="0"
-        y="0"
+  const mask =
+    Buffer.from(`
+      <svg
         width="${width}"
         height="${height}"
-        rx="${PHOTO_RADIUS}"
-        ry="${PHOTO_RADIUS}"
-        fill="white"
-      />
+        xmlns="http://www.w3.org/2000/svg"
+      >
 
-    </svg>
-  `);
+        <rect
+          x="0"
+          y="0"
+          width="${width}"
+          height="${height}"
+          rx="${PHOTO_RADIUS}"
+          ry="${PHOTO_RADIUS}"
+          fill="white"
+        />
 
-  // Aplicar máscara
-  return sharp(img)
+      </svg>
+    `);
+
+
+  // ====================================================
+  // APLICAR MÁSCARA
+  // ====================================================
+
+  return sharp(image)
     .composite([
       {
         input: mask,
@@ -201,42 +306,6 @@ async function buildPhoto(
 
 
 // ======================================================
-// CREAR MARCO DE LA FOTO
-// ======================================================
-
-function buildPhotoFrame(
-  width: number,
-  height: number
-): Buffer {
-
-  const svg = `
-    <svg
-      width="${width}"
-      height="${height}"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-
-      <!-- Marco exterior -->
-      <rect
-        x="${PHOTO_BORDER_WIDTH / 2}"
-        y="${PHOTO_BORDER_WIDTH / 2}"
-        width="${width - PHOTO_BORDER_WIDTH}"
-        height="${height - PHOTO_BORDER_WIDTH}"
-        rx="${PHOTO_RADIUS}"
-        ry="${PHOTO_RADIUS}"
-        fill="none"
-        stroke="${PHOTO_BORDER_COLOR}"
-        stroke-width="${PHOTO_BORDER_WIDTH}"
-      />
-
-    </svg>
-  `;
-
-  return Buffer.from(svg);
-}
-
-
-// ======================================================
 // GENERAR CREDENCIAL
 // ======================================================
 
@@ -245,29 +314,57 @@ export async function generateCredential(
   fotoPath?: string
 ): Promise<Buffer> {
 
-  // ----------------------------------------------------
+
+  // ====================================================
   // CARGAR PLANTILLA
-  // ----------------------------------------------------
+  // ====================================================
 
-  const base = fs.existsSync(TEMPLATE)
-    ? sharp(TEMPLATE)
-    : sharp({
-        create: {
-          width: 1024,
-          height: 1536,
-          channels: 4,
-          background: '#ffffff',
-        },
-      });
+  const base =
+    fs.existsSync(TEMPLATE)
 
-  const {
-    width = 1024,
-    height = 1536,
-  } = await base.clone().metadata();
+      ? sharp(TEMPLATE)
+
+      : sharp({
+          create: {
+            width: DESIGN_WIDTH,
+            height: DESIGN_HEIGHT,
+            channels: 4,
+            background: '#ffffff',
+          },
+        });
 
 
   // ====================================================
-  // NOMBRE
+  // OBTENER DIMENSIONES REALES
+  // ====================================================
+
+  const metadata =
+    await base.clone().metadata();
+
+
+  const width =
+    metadata.width ??
+    DESIGN_WIDTH;
+
+
+  const height =
+    metadata.height ??
+    DESIGN_HEIGHT;
+
+
+  // ====================================================
+  // CALCULAR ESCALA
+  // ====================================================
+
+  const scale =
+    getScale(
+      width,
+      height
+    );
+
+
+  // ====================================================
+  // LIMPIAR Y FORMATEAR NOMBRE
   // ====================================================
 
   const nombreLimpio =
@@ -277,44 +374,85 @@ export async function generateCredential(
       .toUpperCase();
 
 
-  const boxWidth =
-    NAME_BOX.right -
-    NAME_BOX.left;
+  // ====================================================
+  // ÁREA DEL NOMBRE
+  // ====================================================
 
+  const nameLeft =
+    NAME_BOX.left * scale.x;
+
+  const nameRight =
+    NAME_BOX.right * scale.x;
+
+  const nameTop =
+    NAME_BOX.top * scale.y;
+
+  const nameBottom =
+    NAME_BOX.bottom * scale.y;
+
+
+  // ====================================================
+  // DIMENSIONES DEL ÁREA
+  // ====================================================
+
+  const nameWidth =
+    nameRight - nameLeft;
+
+  const nameHeight =
+    nameBottom - nameTop;
+
+
+  // ====================================================
+  // ANCHO MÁXIMO DEL TEXTO
+  // ====================================================
 
   const maxTextWidth =
-    boxWidth -
+    nameWidth -
     NAME_PADDING * 2;
 
 
-  // Calcular tamaño real
-  const fontSize =
+  // ====================================================
+  // CALCULAR TAMAÑO DE FUENTE
+  // ====================================================
+
+  const fontSizeBase =
     await calculateFontSize(
       nombreLimpio,
-      maxTextWidth
+      maxTextWidth / scale.x
     );
 
 
-  // Centro horizontal
+  const fontSize =
+    fontSizeBase * scale.x;
+
+
+  // ====================================================
+  // CENTRAR NOMBRE HORIZONTALMENTE
+  // ====================================================
+
   const centerX =
-    (NAME_BOX.left +
-      NAME_BOX.right) / 2;
+    (nameLeft + nameRight) / 2;
 
 
-  // Centro vertical
+  // ====================================================
+  // CENTRAR NOMBRE VERTICALMENTE
+  // ====================================================
+
   const centerY =
-    (NAME_BOX.top +
-      NAME_BOX.bottom) / 2;
+    (nameTop + nameBottom) / 2;
 
 
-  // Línea base
+  // ====================================================
+  // AJUSTE DE LÍNEA BASE
+  // ====================================================
+
   const baselineY =
     centerY +
     fontSize * 0.35;
 
 
   // ====================================================
-  // SVG DEL NOMBRE
+  // CREAR SVG DEL NOMBRE
   // ====================================================
 
   const nameSvg = `
@@ -331,7 +469,7 @@ export async function generateCredential(
         font-family="Arial, Helvetica, sans-serif"
         font-weight="700"
         font-size="${fontSize}px"
-        fill="${NAME_COLOR}"
+        fill="${esc(NAME_COLOR)}"
       >
         ${esc(nombreLimpio)}
       </text>
@@ -341,10 +479,11 @@ export async function generateCredential(
 
 
   // ====================================================
-  // CAPAS
+  // CREAR CAPAS
   // ====================================================
 
-  const capas = [];
+  const layers:
+    sharp.OverlayOptions[] = [];
 
 
   // ====================================================
@@ -357,39 +496,61 @@ export async function generateCredential(
   ) {
 
     // -----------------------------------------------
-    // 1. Crear fotografía
+    // COORDENADAS ESCALADAS
     // -----------------------------------------------
 
-    const photo =
-      await buildPhoto(fotoPath);
-
-
-    capas.push({
-      input: photo,
-      top:
-        PHOTO_BOX.top +
-        PHOTO_PADDING,
-      left:
-        PHOTO_BOX.left +
-        PHOTO_PADDING,
-    });
-
-
-    // -----------------------------------------------
-    // 2. Dibujar nuevamente el marco
-    // -----------------------------------------------
-
-    const frame =
-      buildPhotoFrame(
-        PHOTO_BOX.width,
-        PHOTO_BOX.height
+    const photoLeft =
+      Math.round(
+        PHOTO_BOX.left * scale.x
       );
 
 
-    capas.push({
-      input: frame,
-      top: PHOTO_BOX.top,
-      left: PHOTO_BOX.left,
+    const photoTop =
+      Math.round(
+        PHOTO_BOX.top * scale.y
+      );
+
+
+    const photoWidth =
+      Math.round(
+        PHOTO_BOX.width * scale.x
+      );
+
+
+    const photoHeight =
+      Math.round(
+        PHOTO_BOX.height * scale.y
+      );
+
+
+    // -----------------------------------------------
+    // CREAR FOTOGRAFÍA
+    // -----------------------------------------------
+
+    const photo =
+      await buildPhoto(
+        fotoPath,
+        photoWidth,
+        photoHeight
+      );
+
+
+    // -----------------------------------------------
+    // AGREGAR FOTO
+    //
+    // NO agregamos otro marco.
+    //
+    // El marco azul de la plantilla permanece visible.
+    // -----------------------------------------------
+
+    layers.push({
+
+      input: photo,
+
+      left: photoLeft,
+
+      top: photoTop,
+
     });
   }
 
@@ -398,19 +559,24 @@ export async function generateCredential(
   // NOMBRE
   // ====================================================
 
-  capas.push({
-    input: Buffer.from(nameSvg),
+  layers.push({
+
+    input:
+      Buffer.from(nameSvg),
+
     top: 0,
+
     left: 0,
+
   });
 
 
   // ====================================================
-  // GENERAR PNG
+  // GENERAR CREDENCIAL FINAL
   // ====================================================
 
   return base
-    .composite(capas)
+    .composite(layers)
     .png({
       compressionLevel: 9,
       adaptiveFiltering: true,

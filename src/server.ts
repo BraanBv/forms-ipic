@@ -12,6 +12,9 @@ app.use(express.static(path.join(__dirname, '../public')));
 const DB = path.join(__dirname, '../data/registros.json');
 const FOTOS = path.join(__dirname, '../data/fotos');
 fs.mkdirSync(FOTOS, { recursive: true });
+// Borra cualquier foto que haya quedado en disco de ejecuciones anteriores
+fs.readdirSync(FOTOS).forEach(f => fs.rmSync(path.join(FOTOS, f), { force: true }));
+const AVISO_VERSION = '2026-10-06';
 const fotoPath = (id: string) => path.join(FOTOS, `${id}.jpg`);
 const ADMIN_USER = process.env.ADMIN_USER ?? 'admin';
 const ADMIN_PASS = process.env.ADMIN_PASS ?? 'cambiar123';
@@ -21,7 +24,8 @@ const NIVELES = ['Sin estudios', 'Primaria', 'Secundaria', 'Preparatoria / Bachi
 const GENEROS = ['Femenino', 'Masculino', 'Otro', 'Prefiero no decir'];
 
 interface Registro { id: string; nombre: string; genero: string; correo: string; telefono: string;
-  nivel: string; escuela: string; carrera: string; fecha: string; }
+  nivel: string; escuela: string; carrera: string; fecha: string;
+  consentimiento: { version: string; fecha: string }; }
 
 const leer = (): Registro[] => fs.existsSync(DB) ? JSON.parse(fs.readFileSync(DB, 'utf8')) : [];
 const guardar = (r: Registro[]) => fs.writeFileSync(DB, JSON.stringify(r, null, 2));
@@ -45,27 +49,32 @@ app.post('/api/registro', async (req: Request, res: Response) => {
   if (!foto) return res.status(400).json({ error: 'Agrega tu foto de perfil.' });
   const fotoBuf = Buffer.from(foto[2], 'base64');
   if (fotoBuf.length > 4 * 1024 * 1024) return res.status(400).json({ error: 'La foto pesa más de 4 MB.' });
+  if (b.acepto !== true) return res.status(400).json({ error: 'Debes aceptar el Aviso de Privacidad.' });
 
   const registros = leer();
   if (registros.some(r => r.correo === correo)) return res.status(409).json({ error: 'Este correo ya está registrado.' });
   const reg: Registro = { id: crypto.randomUUID(), nombre, genero: b.genero, correo, telefono,
-    nivel: b.nivel, escuela: nivelIdx >= 1 ? escuela : '', carrera: nivelIdx >= 4 ? carrera : '', fecha: new Date().toISOString() };
+    nivel: b.nivel, escuela: nivelIdx >= 1 ? escuela : '', carrera: nivelIdx >= 4 ? carrera : '', fecha: new Date().toISOString(),
+    consentimiento: { version: AVISO_VERSION, fecha: new Date().toISOString() } };
+  // La foto vive en disco solo mientras se genera la credencial y se borra siempre.
+  const tmp = fotoPath(reg.id);
+  let png = Buffer.alloc(0);
   try {
-    await sharp(fotoBuf).rotate().resize(600, 600, { fit: 'cover', position: 'attention' }).jpeg({ quality: 88 }).toFile(fotoPath(reg.id));
-  } catch {
-    return res.status(400).json({ error: 'La foto no es una imagen válida.' });
+    try {
+      await sharp(fotoBuf).rotate().resize(600, 600, { fit: 'cover', position: 'attention' }).jpeg({ quality: 88 }).toFile(tmp);
+    } catch {
+      return res.status(400).json({ error: 'La foto no es una imagen válida.' });
+    }
+    png = await generateCredential(reg.nombre, tmp);
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ error: 'No se pudo generar la credencial. Intenta de nuevo.' });
+  } finally {
+    fs.rmSync(tmp, { force: true });
   }
   registros.push(reg);
   guardar(registros);
-  res.json({ id: reg.id });
-});
-
-app.get('/api/credencial/:id', async (req: Request, res: Response) => {
-  const reg = leer().find(r => r.id === req.params.id);
-  if (!reg) return res.status(404).json({ error: 'No encontrado' });
-  const png = await generateCredential(reg.nombre, fotoPath(reg.id));
-  res.set({ 'Content-Type': 'image/png', 'Content-Disposition': 'attachment; filename="credencial.png"' });
-  res.send(png);
+  res.json({ id: reg.id, credencial: png.toString('base64') });
 });
 
 // --- Admin ---

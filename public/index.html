@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="registro.css"></head>
 <body><div class="page">
 <aside class="evento">
- <h2>SIMPOSIO - Lideres del mañana juventud, industria y futuro</h2>
+ <h2>SIMPOSIO - Líderes del mañana juventud, industria y futuro.</h2>
  <dl class="datos">
   <div><dt>Fecha del evento</dt><dd>10 de Noviembre de 2026</dd></div>
   <div><dt>Hora de inicio</dt><dd>9:00 hrs</dd></div>
@@ -34,6 +34,7 @@
      <div class="foto-acc"><div><button type="button" class="sec" id="btn-sub">Subir foto</button> <button type="button" class="sec" id="btn-cam">Tomar foto</button></div>
       <input type="file" id="file" accept="image/*" hidden><p class="ayuda">De frente, con buena luz y fondo claro. Saldrá en tu credencial.</p></div></div>
     <div class="camara hidden" id="cam"><video id="vid" autoplay playsinline muted></video><div class="cam-acc"><button type="button" id="btn-cap">Capturar foto</button> <button type="button" class="sec" id="btn-x">Cancelar</button></div></div></div>
+   <div class="campo ancho"><label class="check" for="acepto"><input type="checkbox" id="acepto" name="acepto"><span>He leído y acepto el <a href="aviso-privacidad.html" target="_blank" rel="noopener">Aviso de Privacidad</a> y doy mi consentimiento para el tratamiento de mis datos personales, incluida mi fotografía, para las finalidades que ahí se describen.</span></label></div>
    <button>Enviar y generar credencial</button>
    <div class="err" id="err" role="alert"></div>
   </form>
@@ -41,8 +42,19 @@
  <section class="ok hidden" id="ok">
   <h1>Registro completado</h1>
   <div class="aviso" role="note"><strong>No olvides llevar tu credencial al evento.</strong> Sin ella, no podrás ingresar al Instituto Tecnológico de San Juan del Río. Recuerda llegar antes de las 9:00 a. m. Te recomendamos llegar con anticipación para evitar contratiempos.</div>
-  <a class="btn" id="dl" href="#" download>Descargar mi credencial</a>
+  <a class="btn" id="dl" href="#" download="credencial.png">Descargar mi credencial</a>
+  <p class="ayuda" style="margin-top:14px">Descárgala ahora. Por tu privacidad, no guardamos tu foto ni tu credencial en el servidor; si cierras esta página ya no podrás volver a descargarla.</p>
  </section>
+ <footer class="aliados">
+  <p>Con la participación de</p>
+  <ul class="logos">
+   <li data-n="Logo 1"><img src="./logos/ipic.png" alt="CETEC IPIC" onerror="this.parentNode.classList.add('falta')"></li>
+   <li data-n="Logo 2"><img src="./logos/itsjr.png" alt="Instituto Tecnológico de San Juan del Río" onerror="this.parentNode.classList.add('falta')"></li>
+   <li data-n="Logo 3"><img src="./logos/uaq.png" alt="Universidad Autónoma de Querétaro" onerror="this.parentNode.classList.add('falta')"></li>
+   <li data-n="Logo 4"><img src="./logos/utsjr.png" alt="Universidad Tecnológica de San Juan del Río" onerror="this.parentNode.classList.add('falta')"></li>
+  </ul>
+  <p class="pie"><a href="aviso-privacidad.html" target="_blank" rel="noopener">Aviso de Privacidad</a></p>
+ </footer>
 </main></div>
 <script src="app.js"></script>
 <script>
