@@ -312,7 +312,7 @@ async function buildPhoto(
 export async function generateCredential(
   nombre: string,
   fotoPath?: string
-): Promise<Buffer> {
+) {
 
 
   // ====================================================
@@ -482,8 +482,7 @@ export async function generateCredential(
   // CREAR CAPAS
   // ====================================================
 
-  const layers:
-    sharp.OverlayOptions[] = [];
+  const layers = [];
 
 
   // ====================================================
