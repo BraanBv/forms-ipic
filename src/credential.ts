@@ -344,7 +344,7 @@ export async function generateCredential(
   // CAPAS
   // ====================================================
 
-  const capas: sharp.OverlayOptions[] = [];
+  const capas = [];
 
 
   // ====================================================
